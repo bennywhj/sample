@@ -10,59 +10,11 @@ using namespace cv;
 using namespace std;
 
 
-double sigmoid(double t,double scale,double range, int mode = 1)
-{
-  double result;
-  if(mode == 1)
-  {
-    result = range*1.0f/(1+exp(t*scale));//flipped sigmoid function
-  }
-  else if(mode == 0)
-  {
-    result = range*1.0f/(1+exp(-1.0*t*scale));//standard sigmoid function
-  }
-  return result;
-}
-
-bool IsInMask(int u, int v, cv::Mat& roi_mask)
-{
-  if(roi_mask.at<uchar>(v,u) >0) return true;
-  else return false;
-}
-
-//judge if a mat is all zero or not  
-bool IsAllZero(const cv::Mat& mat)
-{
-   for(int i = 0;i<mat.rows;i++)
-    {
-      const uchar* mat_ptr = mat.ptr<uchar>(i);
-       
-      for(int j = 0; j<mat.cols; j++)
-      {
-        int d = mat_ptr[j];
-        if(d!=0) return false;       
-      }
-
-    }
-   
-   return true;
-}
 
 
 
-void drawMasks(vector<cv::Mat>& masks_)
-{
-  int num = masks_.size();
 
-  if(num > 0)
-  {
-    for(int i = 0; i < num; i++)
-    {
-      cv::imshow("masks_",masks_[i]);
-      cv::waitKey(0);
-    }
-  }
-}
+
 
 USegmentPars::USegmentPars(int min_intense_, int min_disparity_raw_, int min_area_)
 {
@@ -702,9 +654,7 @@ void UVDisparity::confirmed()
          {
            masks_confirmed_.push_back(maski);
          }
-           // cv::imshow("maski",maski);
-           // cv::imshow("maskjj",maskjj);
-           // cv::waitKey(0);
+
         }
 
          if(minRows == maskj.rows)
@@ -715,9 +665,7 @@ void UVDisparity::confirmed()
          {
            masks_confirmed_.push_back(maski);
          }
-           // cv::imshow("maskii",maskii);
-           // cv::imshow("maskj",maskj);
-           // cv::waitKey(0);
+
         }   
       }
     }
@@ -790,7 +738,7 @@ bool UVDisparity::isOverlapped(const cv::Mat& mask1, const cv::Mat& mask2)
 
   bitwise_and(mask1,mask2,result_and);
   
-  if(IsAllZero(result_and))
+  if(isAllZero(result_and))
   {
     return false;
   }
@@ -864,7 +812,7 @@ void UVDisparity::adjustUdisIntense(double scale, double range)
       uchar* u_ptr = u_dis_.ptr<uchar>(j);
       int disparity = j;
 
-      double rate = sigmoid(disparity,scale,range);//0.02 -- 0.03之间比较好
+      double rate = sigmoid(disparity,scale,range,1);//0.02 -- 0.03之间比较好
       //cout<<"the rate is: "<<rate<<endl;
         
       for(int i = 0; i < u_dis_.cols; i++)
@@ -996,7 +944,7 @@ void UVDisparity::segmentation(const cv::Mat& disparity, const cv::Mat& img_L,
             if(abs(dis_real - i) < eps)
             {
               cv::Point pt(j,k);
-              if(IsInMask(j,k,roi_mask))
+              if(isInMask(j,k,roi_mask))
               {
                 mask_moving.at<uchar>(k,j)=255;
               }
@@ -1014,4 +962,42 @@ void UVDisparity::segmentation(const cv::Mat& disparity, const cv::Mat& img_L,
 }
 
 
+//judge if a mat is all zero or not
+bool UVDisparity::isAllZero(const cv::Mat& mat)
+{
+   for(int i = 0;i<mat.rows;i++)
+    {
+      const uchar* mat_ptr = mat.ptr<uchar>(i);
+
+      for(int j = 0; j<mat.cols; j++)
+      {
+        int d = mat_ptr[j];
+        if(d!=0) return false;
+      }
+
+    }
+
+   return true;
+}
+
+bool UVDisparity::isInMask(int u, int v, const cv::Mat& roi_mask)
+{
+  if(roi_mask.at<uchar>(v,u) >0) return true;
+  else return false;
+}
+
+
+double UVDisparity::sigmoid(double t,double scale,double range, int mode = 1)
+{
+  double result;
+  if(mode == 1)
+  {
+    result = range*1.0f/(1+exp(t*scale));//flipped sigmoid function
+  }
+  else if(mode == 0)
+  {
+    result = range*1.0f/(1+exp(-1.0*t*scale));//standard sigmoid function
+  }
+  return result;
+}
 

@@ -83,23 +83,28 @@ private:
     void filterInOut(const cv::Mat& img_L, const cv::Mat& roi_mask, const Mat &sgbm_roi,
                      VisualOdometryStereo& vo, const double pitch_);
 
+    //find all the candidates
     void findAllMasks(const VisualOdometryStereo& vo,const cv::Mat& img_L,cv::Mat& xyz, cv::Mat& roi_mask);
 
-    void verifyByInliers(const VisualOdometryStereo &vo, const cv::Mat &img_L);
-
-    void mergeMasks();
-    
+    //Segmentation in disparity map
     void segmentation(const cv::Mat& disparity, const cv::Mat& img_L, cv::Mat& roi_mask, cv::Mat& mask_moving);
+    void confirmed();
 
+    //sigmoid function to adjust the intensity of U-disparity
+    double sigmoid(double t,double scale,double range, int mode);
     void adjustUdisIntense(double scale, double range);
 
-    int numInlierInMask(const cv::Mat &mask, const VisualOdometryStereo &vo, const cv::Mat &img_L);
-
-    void confirmed();
-    
+    //judge functions for segments merging
     bool isMasksSeparate();
-
     bool isOverlapped(const cv::Mat &mask1, const cv::Mat &mask2);
+    bool isAllZero(const cv::Mat& mat);
+    bool isInMask(int u, int v, const cv::Mat& roi_mask);
+    int numInlierInMask(const cv::Mat & mask, const VisualOdometryStereo &vo, const cv::Mat &img_L);
+    void mergeMasks(); //merge overlapped segments
+
+    //improve the results by inliers
+    void verifyByInliers(const VisualOdometryStereo &vo, const cv::Mat &img_L);
+
 
 
 

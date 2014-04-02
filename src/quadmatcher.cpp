@@ -6,49 +6,20 @@
 
 #include "quadmatcher.hpp"
 #include <array>
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/calib3d/calib3d.hpp"
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/contrib/contrib.hpp"
+#include "opencv2/core/core.hpp"
+
 
 using namespace cv;
 using namespace std;
 
-float caldistance(const cv::Mat& vec1, const cv::Mat& vec2, bool descriptor_binary)
-{
-    CV_Assert(vec1.rows == 1 && vec2.rows == 1 && vec1.cols == vec2.cols && vec1.type()==vec2.type());
-
-    float d = 0.0f;
-
-    if(!descriptor_binary)// for sift and surf, L2_NORM
-    {
-        CV_Assert(vec1.type()==CV_32F);
-        d = (float) cv::norm(vec1,vec2,NORM_L2);
-
-    }
-    else
-    {
-        CV_Assert(vec1.type()==CV_8U);
-        d = (float) cv::norm(vec1,vec2,NORM_HAMMING);
-    }
-
-    return d;
-}
 
 
-void KeyPoint2Point(vector<KeyPoint>& keypoint, vector<Point2f>& pt)
-{
-    pt.clear();      cv::Mat ground_mask;
-
-    int num = keypoint.size();
-    for(int i = 0;i<num;i++)
-    {
-        pt.push_back(keypoint[i].pt);
-    }
-}
 
 
-bool WithinRegion(cv::Point2f& pt, cv::Size& region)
-{
-    if(pt.x<region.width && pt.x>0.0f && pt.y<region.height && pt.y>0.0f) return true;
-    else return false;
-}
 
 
 QuadFeatureMatch::QuadFeatureMatch(cv::Mat& img_lc_,cv::Mat& img_rc_,
@@ -490,10 +461,10 @@ void QuadFeatureMatch::filteringTracks(vector<Point2f>& point_lc, vector<Point2f
         int dif_y = cvRound(abs(pt_lp.y - pt_lp_predict.y ));
 
 
-        if(     WithinRegion(pt_lc,region)           //outliers
-               && WithinRegion(pt_lp,region)
-               && WithinRegion(pt_rc,region)
-               && WithinRegion(pt_rp,region)
+        if(     withinRegion(pt_lc,region)           //outliers
+               && withinRegion(pt_lp,region)
+               && withinRegion(pt_rc,region)
+               && withinRegion(pt_rp,region)
                && dif_height1 < minHeightDif
                && dif_height2 < minHeightDif
                && dif_height11 < minHeightDif2
@@ -519,6 +490,47 @@ void QuadFeatureMatch::filteringTracks(vector<Point2f>& point_lc, vector<Point2f
             quadmatches.push_back(res);
         }
     }
+}
+
+
+void QuadFeatureMatch::KeyPoint2Point(vector<KeyPoint>& keypoint, vector<Point2f>& pt)
+{
+    pt.clear();      cv::Mat ground_mask;
+
+    int num = keypoint.size();
+    for(int i = 0;i<num;i++)
+    {
+        pt.push_back(keypoint[i].pt);
+    }
+}
+
+
+bool QuadFeatureMatch::withinRegion(cv::Point2f& pt, cv::Size& region)
+{
+    if(pt.x<region.width && pt.x>0.0f && pt.y<region.height && pt.y>0.0f) return true;
+    else return false;
+}
+
+
+float QuadFeatureMatch::caldistance(const cv::Mat& vec1, const cv::Mat& vec2, bool descriptor_binary)
+{
+    CV_Assert(vec1.rows == 1 && vec2.rows == 1 && vec1.cols == vec2.cols && vec1.type()==vec2.type());
+
+    float d = 0.0f;
+
+    if(!descriptor_binary)// for sift and surf, L2_NORM
+    {
+        CV_Assert(vec1.type()==CV_32F);
+        d = (float) cv::norm(vec1,vec2,NORM_L2);
+
+    }
+    else
+    {
+        CV_Assert(vec1.type()==CV_8U);
+        d = (float) cv::norm(vec1,vec2,NORM_HAMMING);
+    }
+
+    return d;
 }
 
 
@@ -642,8 +654,10 @@ void QuadFeatureMatch::circularMatching()
 }
 
 
+
+
 //print usage parameters of feature detector and descriptor
-void printParams( cv::Algorithm* algorithm )
+void QuadFeatureMatch::printParams( cv::Algorithm* algorithm )
 {
     std::vector<std::string> parameters;
     algorithm->getParams(parameters);
